@@ -1,0 +1,3 @@
+INTRODUCTION
+-----------------------
+An intelligent fluid flow rate detection system using raspberry pi .To get desired liquid on user requirements, the user want to manually enter the value of the fluid depending upon that the motor will be ON for a time till the desired quantity of the fluid entered. Finally, the system displays details of the fluid distributed.
