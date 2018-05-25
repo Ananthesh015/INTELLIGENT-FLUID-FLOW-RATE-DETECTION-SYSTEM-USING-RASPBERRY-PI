@@ -1,0 +1,219 @@
+CODE
+-------------
+
+import RPi.GPIO as gpio
+import time
+########## Initilization ########## 
+RS =26
+EN =19
+D4 =13
+D5 =6
+D6 =5
+D7 =11
+DT=9
+SCK=8
+motor=23
+key=25
+HIGH=1
+LOW=0
+sample=0
+val=0
+value=0
+
+######### Gpio output and input pin setting ###############
+gpio.setwarnings(False)
+gpio.setmode(gpio.BCM)
+gpio.setup(SCK, gpio.OUT)
+gpio.setup(RS, gpio.OUT)
+gpio.setup(EN, gpio.OUT)
+gpio.setup(D4, gpio.OUT)
+gpio.setup(D5, gpio.OUT)
+gpio.setup(D6, gpio.OUT)
+gpio.setup(D7, gpio.OUT)
+gpio.setup(motor, gpio.OUT)
+gpio.setup(key, gpio.IN, gpio.PUD_DOWN)
+gpio.output(motor, 0)
+
+################ LCD display initilazation code start here #############
+def begin():
+  lcdcmd(0x33) 
+  lcdcmd(0x32) 
+  lcdcmd(0x06)
+  lcdcmd(0x0C) 
+  lcdcmd(0x28) 
+  lcdcmd(0x01) 
+  time.sleep(0.0005)
+ 
+def lcdcmd(ch): 
+  gpio.output(RS, 0)
+  gpio.output(D4, 0)
+  gpio.output(D5, 0)
+  gpio.output(D6, 0)
+  gpio.output(D7, 0)
+  if ch&0x10==0x10:
+    gpio.output(D4, 1)
+  if ch&0x20==0x20:
+    gpio.output(D5, 1)
+  if ch&0x40==0x40:
+    gpio.output(D6, 1)
+  if ch&0x80==0x80:
+    gpio.output(D7, 1)
+  gpio.output(EN, 1)
+  time.sleep(0.005)
+  gpio.output(EN, 0)
+
+  # Low bits
+  gpio.output(D4, 0)
+  gpio.output(D5, 0)
+  gpio.output(D6, 0)
+  gpio.output(D7, 0)
+  if ch&0x01==0x01:
+    gpio.output(D4, 1)
+  if ch&0x02==0x02:
+    gpio.output(D5, 1)
+  if ch&0x04==0x04:
+    gpio.output(D6, 1)
+  if ch&0x08==0x08:
+    gpio.output(D7, 1)
+  gpio.output(EN, 1)
+  time.sleep(0.005)
+  gpio.output(EN, 0)
+  
+def lcdwrite(ch): 
+  gpio.output(RS, 1)
+  gpio.output(D4, 0)
+  gpio.output(D5, 0)
+  gpio.output(D6, 0)
+  gpio.output(D7, 0)
+  if ch&0x10==0x10:
+    gpio.output(D4, 1)
+  if ch&0x20==0x20:
+    gpio.output(D5, 1)
+  if ch&0x40==0x40:
+    gpio.output(D6, 1)
+  if ch&0x80==0x80:
+    gpio.output(D7, 1)
+  gpio.output(EN, 1)
+  time.sleep(0.005)
+  gpio.output(EN, 0)
+
+  # Low bits
+  gpio.output(D4, 0)
+  gpio.output(D5, 0)
+  gpio.output(D6, 0)
+  gpio.output(D7, 0)
+  if ch&0x01==0x01:
+    gpio.output(D4, 1)
+  if ch&0x02==0x02:
+    gpio.output(D5, 1)
+  if ch&0x04==0x04:
+    gpio.output(D6, 1)
+  if ch&0x08==0x08:
+    gpio.output(D7, 1)
+  gpio.output(EN, 1)
+  time.sleep(0.005)
+  gpio.output(EN, 0)
+
+def lcdclear():
+  lcdcmd(0x01)
+ 
+def lcdprint(Str):
+  l=0;
+  l=len(Str)
+  for i in range(l):
+    lcdwrite(ord(Str[i]))
+    
+def setCursor(x,y):
+    if y == 0:
+        n=128+x
+    elif y == 1:
+        n=192+x
+    lcdcmd(n)
+################### LCD Code ends here #####################
+
+########### loadcell code start here ##################
+def readCount():
+  i=0
+  Count=0
+  gpio.setup(DT, gpio.OUT)
+  gpio.output(DT,1)
+  gpio.output(SCK,0)
+  gpio.setup(DT, gpio.IN)
+
+  while gpio.input(DT) == 1:
+      i=0
+  for i in range(24):
+        gpio.output(SCK,1)
+        Count=Count<<1
+
+        gpio.output(SCK,0)
+        #time.sleep(0.001)
+        if gpio.input(DT) == 0: 
+            Count=Count+1
+            #print Count
+        
+  gpio.output(SCK,1)
+  Count=Count^0x800000
+  #time.sleep(0.001)
+  gpio.output(SCK,0)
+  return Count  
+
+
+################ main code start here ########################
+begin()
+lcdcmd(0x01)
+lcdprint("    WELCOME ")
+print("WELCOME")
+time.sleep(2)
+lcdclear()
+lcdcmd(0x01)
+lcdprint("  RASPBERRY-PI")
+lcdcmd(0xc0)
+lcdprint("  SMART SCALE")
+print("Raspberry-pi Smart scale")
+time.sleep(3)
+sample= readCount()
+lcdclear()
+
+time.sleep(3)
+sample= readCount()
+flag=0
+gpio.output(motor, 0)
+while 1:
+  print"press key"
+  lcdcmd(0x01)
+  lcdprint("   Press key")
+  time.sleep(1)
+  lcdclear()
+  if gpio.input(key)==1:  
+      lcdcmd(0x01)
+      lcdprint("Enter qty of liq")
+      load = input("Enter  the quantity of liquid = ")
+      value = load
+      while 1:
+         # load = input("Enter  the quantity of liquid = ")
+          print"You requested for",value
+         # value = load
+         # print"value=",load  
+          count= readCount()
+          w=0
+          w=(sample-count)  
+          print w,"ml"
+          gpio.output(motor, 1)
+          if w>=value:
+               gpio.output(motor, 0)
+               print"CONTAINER IS LOADED WITH = ",value"ml"
+               print"MOTOR OFF"
+               lcdcmd(0xc0)
+               lcdprint("REQ COMPLETED = ")
+               break
+          else:
+               gpio.output(motor, 1)    
+               data=str(w);
+               lcdprint(data)
+               lcdprint("ml")
+               time.sleep(1)
+               lcdclear()
+
+          
+gpio.cleanup()    
