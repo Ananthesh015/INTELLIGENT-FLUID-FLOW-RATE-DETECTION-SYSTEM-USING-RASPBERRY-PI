@@ -1,5 +1,5 @@
-                                                         INTELLIGENT FLUID FLOW RATE DETECTION SYSTEM USING RASPBERRY PI
-                                                        ==================================================================
+                                          INTELLIGENT FLUID FLOW RATE DETECTION SYSTEM USING RASPBERRY PI
+                                         ==================================================================
 
 
 INSTALLATION
